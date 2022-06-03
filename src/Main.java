@@ -29,36 +29,34 @@ public class Main {
         String port = "3306";
         String url = "jdbc:mysql://" + ip + ":" + port + "/hr";
 
-        String sql = "select * from employees" +
-                " where first_name = '" + firstName + "' and last_name = '"+ contrasena +"'";
+        String sql = "select * from employees where first_name = ? and last_name = ?";
+
         try(Connection conn = DriverManager.getConnection(url,user,pass); //guardando conexión en connection
-            Statement statement = conn.createStatement(); //statement es como el "carrito" que va viajar por conn
-            ResultSet resultSet0 = statement.executeQuery(sql)) {
-
-            if (resultSet0.next()){
-                System.out.println("¡¡¡¡Acceso concecedido!!!!!");
-                ResultSet resultSet = statement.executeQuery("select * from employees");
-                while (resultSet.next()) {
-                    Employee e = new Employee();
-                    e.setId(resultSet.getInt(1));
-                    e.setFirstName(resultSet.getString("first_name"));
-                    e.setLastName(resultSet.getString(3));
-                    listaEmpleados.add(e);
-
-
+            PreparedStatement pstmt = conn.prepareStatement(sql)
+            //Statement statement = conn.createStatement(); //statement es como el "carrito" que va viajar por conn
+            ) {
+            pstmt.setString(1,firstName);
+            pstmt.setString(2,contrasena);
+            try(ResultSet resultSet0 = pstmt.executeQuery()) {
+                if (resultSet0.next()){
+                    System.out.println("¡¡¡¡Acceso concecedido!!!!!");
+                    try(Statement statement = conn.createStatement()){
+                        ResultSet resultSet = statement.executeQuery("select * from employees"); //Este statement no interactúa con el usuario
+                        while (resultSet.next()) {
+                            Employee e = new Employee();
+                            e.setId(resultSet.getInt(1));
+                            e.setFirstName(resultSet.getString("first_name"));
+                            e.setLastName(resultSet.getString(3));
+                            listaEmpleados.add(e);
+                        }
+                        for (Employee e : listaEmpleados){
+                            System.out.println("id: " + e.getId() + " | nombre: " + e.getFirstName() + " | apellido: " + e.getLastName());
+                        }
+                    }
+                }else {
+                    System.out.println("credenciales erróneas");
                 }
-                for (Employee e : listaEmpleados){
-                    System.out.println("id: " + e.getId() + " | nombre: " + e.getFirstName() + " | apellido: " + e.getLastName());
-                }
-
-
-
-            }else {
-                System.out.println("credenciales erróneas");
             }
-
-
-            //insert, udpdate, delete --> executeUpdate(sql);
 
         } catch (SQLException e) {
             e.printStackTrace(); //FORMA 2 DE imprimir excepción de try-catch
